@@ -1,0 +1,196 @@
+import java.util.Scanner;
+
+
+class BankAccount {
+
+
+    private final String accountNumber;
+    private final String pin;
+    private double balance;
+
+    public BankAccount(String accountNumber, String pin, double initialBalance) {
+        this.accountNumber = accountNumber;
+        this.pin = pin;
+        this.balance = initialBalance;
+    }
+
+    
+    public String getAccountNumber() {
+        return accountNumber;
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+   
+    public boolean validatePin(String enteredPin) {
+        return this.pin.equals(enteredPin);
+    }
+
+   
+    public boolean deposit(double amount) {
+        if (amount <= 0) {
+            return false;
+        }
+        balance += amount;
+        return true;
+    }
+
+    public boolean withdraw(double amount) {
+        if (amount <= 0) {
+            return false; 
+        }
+        if (amount > balance) {
+            return false;
+        }
+        balance -= amount;
+        return true;
+    }
+}
+
+
+class ATM {
+
+    private final BankAccount account;
+    private final Scanner scanner;
+
+    public ATM(BankAccount account, Scanner scanner) {
+        this.account = account;
+        this.scanner = scanner;
+    }
+
+    
+    public void start() {
+        if (!authenticate()) {
+            System.out.println("\n❌ Too many failed attempts. Card retained. Goodbye.");
+            return;
+        }
+
+        System.out.println("\n✅ Authentication successful. Welcome!");
+        runMenu();
+    }
+
+   
+    private boolean authenticate() {
+        int attempts = 3;
+        while (attempts > 0) {
+            System.out.print("Enter your 4-digit PIN: ");
+            String enteredPin = scanner.next();
+
+            if (account.validatePin(enteredPin)) {
+                return true;
+            } else {
+                attempts--;
+                System.out.println("❌ Incorrect PIN. Attempts remaining: " + attempts);
+            }
+        }
+        return false;
+    }
+
+   
+    private void runMenu() {
+        boolean running = true;
+
+        while (running) {
+            printMenu();
+            int choice = readValidInt("Choose an option (1-4): ", 1, 4);
+
+            switch (choice) {
+                case 1 -> checkBalance();
+                case 2 -> handleDeposit();
+                case 3 -> handleWithdrawal();
+                case 4 -> {
+                    System.out.println("\n👋 Thank you for using DecodeLabs ATM. Goodbye!");
+                    running = false;
+                }
+                default -> System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    private void printMenu() {
+        System.out.println("\n===== DecodeLabs ATM =====");
+        System.out.println("1. Check Balance");
+        System.out.println("2. Deposit");
+        System.out.println("3. Withdraw");
+        System.out.println("4. Exit");
+    }
+
+    // ---- Transaction handlers ----
+    private void checkBalance() {
+        System.out.printf("\n💰 Current Balance: $%.2f%n", account.getBalance());
+    }
+
+    private void handleDeposit() {
+        double amount = readValidDouble("Enter deposit amount: $");
+        if (account.deposit(amount)) {
+            System.out.printf("✅ Deposit successful. New balance: $%.2f%n", account.getBalance());
+        } else {
+            System.out.println("❌ Deposit failed. Amount must be greater than 0.");
+        }
+    }
+
+    private void handleWithdrawal() {
+        double amount = readValidDouble("Enter withdrawal amount: $");
+        if (account.withdraw(amount)) {
+            System.out.printf("✅ Withdrawal successful. New balance: $%.2f%n", account.getBalance());
+        } else if (amount > account.getBalance()) {
+            System.out.println("❌ Insufficient funds. Transaction declined.");
+        } else {
+            System.out.println("❌ Withdrawal failed. Amount must be greater than 0.");
+        }
+    }
+
+
+
+    private int readValidInt(String prompt, int min, int max) {
+        int value;
+        while (true) {
+            System.out.print(prompt);
+            if (scanner.hasNextInt()) {
+                value = scanner.nextInt();
+                if (value >= min && value <= max) {
+                    return value;
+                } else {
+                    System.out.println("❌ Please enter a number between " + min + " and " + max + ".");
+                }
+            } else {
+                System.out.println("❌ Invalid input. Please enter a whole number.");
+                scanner.next();
+            }
+        }
+    }
+
+    private double readValidDouble(String prompt) {
+        double value;
+        while (true) {
+            System.out.print(prompt);
+            if (scanner.hasNextDouble()) {
+                value = scanner.nextDouble();
+                if (value > 0) {
+                    return value;
+                } else {
+                    System.out.println("❌ Amount must be greater than 0.");
+                }
+            } else {
+                System.out.println("❌ Invalid input. Please enter a numeric amount.");
+                scanner.next(); 
+            }
+        }
+    }
+}
+
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        BankAccount account = new BankAccount("100234", "1234", 500.00);
+
+        System.out.println("===== Welcome to DecodeLabs ATM =====");
+        ATM atm = new ATM(account, scanner);
+        atm.start();
+
+        scanner.close();
+    }
+}
